@@ -241,6 +241,8 @@ config.default = {
       { key = "H", mode = "", action = "page_prev" },
       { key = "E", mode = "", action = "page_last" },
       { key = "F", mode = "", action = "page_first" },
+      -- yank cell
+      { key = "yc",    mode = "n", action = "yank_current_cell" },
       -- yank rows as csv/json
       { key = "yaj", mode = "n", action = "yank_current_json" },
       { key = "yaj", mode = "v", action = "yank_selection_json" },

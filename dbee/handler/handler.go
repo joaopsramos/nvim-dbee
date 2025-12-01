@@ -307,7 +307,7 @@ func (h *Handler) CallDisplayResult(callID core.CallID, buffer nvim.Buffer, from
 	return res.Len(), nil
 }
 
-func (h *Handler) CallStoreResult(callID core.CallID, fmat, out string, from, to int, arg ...any) error {
+func (h *Handler) CallStoreResult(callID core.CallID, fmat, out string, from, to, col int, arg ...any) error {
 	stat, ok := h.lookupCall[callID]
 	if !ok {
 		return fmt.Errorf("unknown call with id: %q", callID)
@@ -321,6 +321,8 @@ func (h *Handler) CallStoreResult(callID core.CallID, fmat, out string, from, to
 		formatter = format.NewCSV()
 	case "table":
 		formatter = newTable()
+	case "plain":
+		formatter = format.NewPlain(col)
 	default:
 		return fmt.Errorf("store output: %q is not supported", fmat)
 	}

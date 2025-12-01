@@ -307,10 +307,12 @@ function Handler:call_store_result(id, format, output, opts)
 
   local from = opts.from or 0
   local to = opts.to or -1
+  local col = opts.col or 0
 
   vim.fn.DbeeCallStoreResult(id, format, output, {
     from = from,
     to = to,
+	col = col,
     extra_arg = opts.extra_arg,
   })
 end

@@ -203,10 +203,11 @@ func mountEndpoints(p *plugin.Plugin, h *handler.Handler) {
 			Opts   *struct {
 				From     int `msgpack:"from"`
 				To       int `msgpack:"to"`
+				Col      int `msgpack:"col"`
 				ExtraArg any `msgpack:"extra_arg"`
 			}
 		},
 		) (any, error) {
-			return nil, h.CallStoreResult(args.ID, args.Format, args.Output, args.Opts.From, args.Opts.To, args.Opts.ExtraArg)
+			return nil, h.CallStoreResult(args.ID, args.Format, args.Output, args.Opts.From, args.Opts.To, args.Opts.Col, args.Opts.ExtraArg)
 		})
 }

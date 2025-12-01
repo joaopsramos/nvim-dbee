@@ -261,6 +261,10 @@ function ResultUI:get_actions()
       self:store_all_wrapper("csv", vim.v.register)
     end,
 
+    yank_current_cell = function()
+      self:store_current_cell_wrapper("plain", vim.v.register)
+    end,
+
     cancel_call = function()
       if self.current_call then
         self.handler:call_cancel(self.current_call.id)
@@ -374,6 +378,54 @@ function ResultUI:store_all_wrapper(format, register)
     error("no call set to result")
   end
   self.handler:call_store_result(self.current_call.id, format, "yank", { extra_arg = register })
+end
+
+-- wrapper for storing the current cell
+---@private
+---@param format string
+---@param register string
+function ResultUI:store_current_cell_wrapper(format, register)
+  if not self.current_call then
+    error("no call set to result")
+  end
+
+  local index = self:current_row_index()
+  local col = self:current_cell_column_index()
+
+  -- Adjust for 0-based index in Go
+  index = index - 1
+  col = col - 1
+  if index <= 0 then index = 0 end
+  if col <= 0 then col = 0 end
+
+  self.handler:call_store_result(
+    self.current_call.id,
+    format,
+    "yank",
+    { from = index, to = index + 1, col = col, extra_arg = register }
+  )
+end
+
+---@private
+---@return number
+function ResultUI:current_cell_column_index()
+  if not self:has_window() then
+    error("result cannot operate without a valid window")
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(self.winid)
+  local line = vim.api.nvim_buf_get_lines(self.bufnr, cursor[1] - 1, cursor[1], true)[1] or ""
+  local col_byte = cursor[2] + 1
+
+  -- Find which cell the cursor is in by splitting the line on │ (box drawing vertical, used as a column separator)
+  -- Count the characters up to cursor position.
+  local index = 1
+  for sep_start in line:gmatch("()│") do
+    if col_byte < sep_start then break end
+    index = index + 1
+  end
+
+  return index - 1
 end
 
 ---@private
