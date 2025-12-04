@@ -253,6 +253,10 @@ config.default = {
 
       -- cancel current call execution
       { key = "<C-c>", mode = "", action = "cancel_call" },
+      
+      -- cell navigation
+      { key = "<Tab>", mode = "n", action = "cell_next" },
+      { key = "<S-Tab>", mode = "n", action = "cell_prev" },
     },
   },
 

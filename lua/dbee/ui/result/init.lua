@@ -270,6 +270,14 @@ function ResultUI:get_actions()
         self.handler:call_cancel(self.current_call.id)
       end
     end,
+
+    -- cell navigation
+    cell_next = function()
+      self:move_to_next_cell()
+    end,
+    cell_prev = function()
+      self:move_to_prev_cell()
+    end,
   }
 end
 
@@ -426,6 +434,124 @@ function ResultUI:current_cell_column_index()
   end
 
   return index - 1
+end
+
+-- Moves cursor to the next cell (column) in the current row
+---@private
+function ResultUI:move_to_next_cell()
+  if not self:has_window() then
+    error("result cannot operate without a valid window")
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(self.winid)
+  local row = cursor[1]
+  local cur_byte = cursor[2] + 1
+  local line = vim.api.nvim_buf_get_lines(self.bufnr, row - 1, row, true)[1] or ""
+
+  local separators = {}
+  for sep_pos in line:gmatch("│()") do
+    table.insert(separators, sep_pos)
+  end
+
+  if #separators == 0 then
+    return
+  end
+
+  for i = 1, #separators do
+    local sep_pos = separators[i]
+
+    if sep_pos > cur_byte then
+      -- move cursor to the end of the current cell to make the separator visible
+      local cell_end_pos = separators[i + 1] or #line
+      vim.api.nvim_win_set_cursor(self.winid, { row, cell_end_pos - 1 })
+
+      -- move cursor to first non-space character after separator
+      local cell_start_pos = sep_pos
+      while cell_start_pos <= #line and line:sub(cell_start_pos, cell_start_pos) == " " do
+        cell_start_pos = cell_start_pos + 1
+      end
+
+      vim.api.nvim_win_set_cursor(self.winid, { row, cell_start_pos - 1 })
+
+      if i == #separators then
+        -- Center the window horizontally on the last column
+        local view = vim.fn.winsaveview()
+        local win_width = vim.api.nvim_win_get_width(self.winid)
+        view.leftcol = math.max(0, sep_pos - math.floor(win_width * 0.9))
+        vim.fn.winrestview(view)
+      end
+
+      return
+    end
+  end
+
+  -- If we reach here, move to first cell of next row
+  if row < vim.api.nvim_buf_line_count(self.bufnr) then
+    vim.api.nvim_win_set_cursor(self.winid, { row + 1, 0 })
+    self:move_to_next_cell()
+    return
+  end
+end
+
+-- Moves cursor to the previous cell (column) in the current row
+---@private
+function ResultUI:move_to_prev_cell()
+  if not self:has_window() then
+    error("result cannot operate without a valid window")
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(self.winid)
+  local row = cursor[1]
+  local cur_byte = cursor[2] + 1
+  local line = vim.api.nvim_buf_get_lines(self.bufnr, row - 1, row, true)[1] or ""
+
+  local separators = {}
+  local sep = "│"
+  local sep_len = #sep
+
+  for sep_pos in line:gmatch("()" .. sep) do
+    table.insert(separators, sep_pos + sep_len - 1)
+  end
+
+  if #separators == 0 then
+    return
+  end
+
+  for i = #separators, 2, -1 do
+    local sep_pos = separators[i]
+
+    if sep_pos < cur_byte then
+      local cell_start_sep = separators[i - 1]
+
+      -- move cursor to previous cell separator to make the separator visible
+      vim.api.nvim_win_set_cursor(self.winid, { row, cell_start_sep - 1 })
+
+      -- move cursor to first non-space character after separator
+      local first_char_pos = cell_start_sep + 1
+      while first_char_pos <= #line and line:sub(first_char_pos, first_char_pos) == " " do
+        first_char_pos = first_char_pos + 1
+      end
+
+      vim.api.nvim_win_set_cursor(self.winid, { row, first_char_pos - 1 })
+
+      return
+    end
+  end
+
+  -- If we're at the first cell, go to the last cell of the previous row
+  if #separators > 0 and row > 3 then
+    local last_sep = separators[#separators]
+
+    -- move cursor to first non-space character after separator
+    local first_char_pos = last_sep + 1
+    while first_char_pos <= #line and line:sub(first_char_pos, first_char_pos) == " " do
+      first_char_pos = first_char_pos + 1
+    end
+
+    vim.api.nvim_win_set_cursor(self.winid, { row - 1, first_char_pos - 1 })
+
+    return
+  end
 end
 
 ---@private
