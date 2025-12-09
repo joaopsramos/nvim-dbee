@@ -139,12 +139,7 @@ func newPostgresJSONResponse(val []byte) *postgresJSONResponse {
 }
 
 func (pj *postgresJSONResponse) String() string {
-	var parsed bytes.Buffer
-	err := json.Indent(&parsed, pj.value, "", "  ")
-	if err != nil {
-		return string(pj.value)
-	}
-	return parsed.String()
+	return string(pj.value)
 }
 
 func (pj *postgresJSONResponse) MarshalJSON() ([]byte, error) {
