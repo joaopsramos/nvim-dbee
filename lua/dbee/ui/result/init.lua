@@ -486,11 +486,11 @@ function ResultUI:move_to_next_cell()
   end
 
   -- If we reach here, move to first cell of next row
-  if row < vim.api.nvim_buf_line_count(self.bufnr) then
-    vim.api.nvim_win_set_cursor(self.winid, { row + 1, 0 })
-    self:move_to_next_cell()
-    return
-  end
+  -- if row < vim.api.nvim_buf_line_count(self.bufnr) then
+  --   vim.api.nvim_win_set_cursor(self.winid, { row + 1, 0 })
+  --   self:move_to_next_cell()
+  --   return
+  -- end
 end
 
 -- Moves cursor to the previous cell (column) in the current row
@@ -538,20 +538,31 @@ function ResultUI:move_to_prev_cell()
     end
   end
 
-  -- If we're at the first cell, go to the last cell of the previous row
-  if #separators > 0 and row > 3 then
-    local last_sep = separators[#separators]
+  -- If we're at the first cell, go to the index column
+  if #separators > 0 and row > 2 then
+    vim.api.nvim_win_set_cursor(self.winid, { row, 0 })
 
-    -- move cursor to first non-space character after separator
-    local first_char_pos = last_sep + 1
+    local first_char_pos = 1
     while first_char_pos <= #line and line:sub(first_char_pos, first_char_pos) == " " do
       first_char_pos = first_char_pos + 1
     end
-
-    vim.api.nvim_win_set_cursor(self.winid, { row - 1, first_char_pos - 1 })
-
-    return
+    vim.api.nvim_win_set_cursor(self.winid, { row, first_char_pos - 1 })
   end
+
+  -- If we're at the first cell, go to the last cell of the previous row
+  -- if #separators > 0 and row > 3 then
+  --   local last_sep = separators[#separators]
+  --
+  --   -- move cursor to first non-space character after separator
+  --   local first_char_pos = last_sep + 1
+  --   while first_char_pos <= #line and line:sub(first_char_pos, first_char_pos) == " " do
+  --     first_char_pos = first_char_pos + 1
+  --   end
+  --
+  --   vim.api.nvim_win_set_cursor(self.winid, { row - 1, first_char_pos - 1 })
+  --
+  --   return
+  -- end
 end
 
 ---@private
