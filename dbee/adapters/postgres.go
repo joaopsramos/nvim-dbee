@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	nurl "net/url"
+	"time"
 
 	_ "github.com/lib/pq"
 
@@ -44,10 +45,41 @@ func (p *Postgres) Connect(url string) (core.Driver, error) {
 		return newPostgresJSONResponse(b)
 	}
 
+	timeProcessor := func(typ string) func(a any) any {
+		return func(a any) any {
+			b, ok := a.(time.Time)
+			if !ok {
+				return a
+			}
+
+			switch typ {
+			case "date":
+				return b.Format("2006-01-02")
+			case "time":
+				return b.Format("15:04:05.000")
+			case "timetz":
+				b = b.In(time.Local)
+				return b.Format("15:04:05.000 -0700")
+			case "timestamp":
+				return b.Format("2006-01-02 15:04:05.000")
+			case "timestamptz":
+				b = b.In(time.Local)
+				return b.Format("2006-01-02 15:04:05.000 -0700")
+			}
+
+			return a
+		}
+	}
+
 	return &postgresDriver{
 		c: builders.NewClient(db,
 			builders.WithCustomTypeProcessor("json", jsonProcessor),
 			builders.WithCustomTypeProcessor("jsonb", jsonProcessor),
+			builders.WithCustomTypeProcessor("date", timeProcessor("date")),
+			builders.WithCustomTypeProcessor("time", timeProcessor("time")),
+			builders.WithCustomTypeProcessor("timetz", timeProcessor("timetz")),
+			builders.WithCustomTypeProcessor("timestamp", timeProcessor("timestamp")),
+			builders.WithCustomTypeProcessor("timestamptz", timeProcessor("timestamptz")),
 		),
 		url: u,
 	}, nil
